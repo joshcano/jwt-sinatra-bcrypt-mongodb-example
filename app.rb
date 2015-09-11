@@ -28,28 +28,16 @@ class Token
   key :random, String
 end
 
-# get '/create' do
-#   temp = User.new(
-#     :user => 'joshcano@gmail.com',
-#     :firstname => "Josh", 
-#     :lastname => "Cano", 
-#     :pass => BCrypt::Password.create('hello',:cost => 12)
-#   )
-#   temp.save!
-#   redirect '/'
-# end
-
-
-def authenticate(user, pass)
-  if User.where(:user => user).first == nil
-    puts "no user account"
-  else
-    if BCrypt::Password.new(User.where(:user => user).first.pass) == pass
-      true
-    else
-      false
-    end
-  end
+# go to this route to create a user account 
+get '/create' do
+  temp = User.new(
+    :user => 'joshcano@gmail.com',
+    :firstname => "Josh", 
+    :lastname => "Cano", 
+    :pass => BCrypt::Password.create('hello',:cost => 12)
+  )
+  temp.save!
+  redirect '/'
 end
 
 
@@ -74,6 +62,20 @@ enable :sessions
 set :session_secret, 'super secret' 
 
 helpers do
+
+  # authenticate the user using bcrypt returns true/false
+  def authenticate(user, pass)
+    if User.where(:user => user).first == nil
+      puts "no user account"
+    else
+      if BCrypt::Password.new(User.where(:user => user).first.pass) == pass
+        true
+      else
+        false
+      end
+    end
+  end
+
 
   # protected just does a redirect if we don't have a valid token
   def protected!
@@ -167,7 +169,8 @@ post '/login' do
       exp: Time.now.to_i + 60 #expire in 60 seconds
     }
     account = User.where(:user => params[:username].downcase.delete(" ")).first
-    randy = ""
+    
+    # using SecureRandom to create a unique random variable 
     randy = SecureRandom.base64
     
     if Token.where(:user => account[:user]).first == nil
@@ -176,8 +179,8 @@ post '/login' do
       Token.where(:user => account[:user]).first.delete 
     end
 
-      only_one_user = Token.new(:user => account[:user],:random => randy)
-      only_one_user.save! 
+    only_one_user = Token.new(:user => account[:user],:random => randy)
+    only_one_user.save! 
 
     @token = JWT.encode({user_id: account[:firstname], random: randy}, settings.signing_key, "RS256", headers)
     puts @token
