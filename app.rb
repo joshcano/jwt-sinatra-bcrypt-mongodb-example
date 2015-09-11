@@ -30,12 +30,14 @@ end
 
 # go to this route to create a user account 
 get '/create' do
-  temp = User.new(
-    :user => 'joshcano@gmail.com',
-    :firstname => "Josh", 
-    :lastname => "Cano", 
-    :pass => BCrypt::Password.create('hello',:cost => 12)
-  )
+  if User.where(:user => "joshcano@gmail.com").first == nil
+    temp = User.new(
+      :user => 'joshcano@gmail.com',
+      :firstname => "Josh", 
+      :lastname => "Cano", 
+      :pass => BCrypt::Password.create('hello',:cost => 12)
+    )
+  end
   temp.save!
   redirect '/'
 end
