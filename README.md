@@ -1,4 +1,4 @@
-jwt-sinatra-example
+jwt-sinatra-bcrypt-mongodb-example
 ===================
 
 JSON Web Token authentication in sinatra example app
@@ -13,14 +13,21 @@ Built using:
 
 [ruby-jwt](https://github.com/progrium/ruby-jwt)
 
+[bcrypt](https://github.com/codahale/bcrypt-ruby)
+
+[mongo_mapper](http://mongomapper.com/)
+
 To get started with this project
 =================================
+
+First go to mongolab[https://mongolab.com] and create an account and database, make sure to create a user and copy the database URI should look something like. 
+`mongodb://<user>:<password>@<url>:<port>/<database_name>`
 
 Clone this repo and run bundle
 
 To start the sinatra server:
 
-from jwt-sinatra-example/
+from jwt-sinatra-bcrypt-mongodbexample/
 
 `ruby app.rb`
 

@@ -1,0 +1,17 @@
+!!!
+%html{:lang => "en"}
+  %head
+    %meta{:charset => "utf-8"}
+      %meta{:content => "width=device-width, initial-scale=1", :name => "viewport"}
+        %title Please sign in to continue
+        %link{:href => "css/bootstrap.min.css", :rel => "stylesheet"}
+          %link{:href => "/css/signin.css", :rel => "stylesheet"}
+  %body
+    .container
+      - if @message
+        .alert.alert-danger{:role => "alert"}= @message
+      %form.form-signin{:action => "/login", :method => "POST", :role => "form"}
+        %h2.form-signin-heading Please sign in
+        %input.form-control{:autofocus => "", :name => "username", :placeholder => "username", :required => "", :type => "text", :value => "joshcano@gmail.com"}
+          %input.form-control{:name => "password", :placeholder => "password", :required => "", :type => "password", :value => "hello"}
+            %button.btn.btn-lg.btn-primary.btn-block{:type => "submit"} Sign in

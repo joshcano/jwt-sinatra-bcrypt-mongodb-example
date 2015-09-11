@@ -1,14 +1,57 @@
-require 'rubygems'
-require 'bundler/setup'
+require 'bundler'
+Bundler.setup
+
 require 'sinatra'
 require 'openssl'
+require 'haml'
+require 'mongo_mapper'
+require 'bcrypt'
+require 'securerandom'
 require 'jwt'
 
+include BCrypt
 
-######
-# first we load up the private and public keys that we will use to sign and verify our JWT token
-# using RS256 algo
-######
+MongoMapper.connection = Mongo::Connection.from_uri('mongodb://<user>:<pass>@<url>:<port>/<database_name`>')
+MongoMapper.database = "testing_spread"
+
+class User
+  include MongoMapper::Document
+  key :user, String
+  key :firstname, String
+  key :lastname, String
+  key :pass, String
+end
+
+class Token
+  include MongoMapper::Document
+  key :user, String
+  key :random, String
+end
+
+# get '/create' do
+#   temp = User.new(
+#     :user => 'joshcano@gmail.com',
+#     :firstname => "Josh", 
+#     :lastname => "Cano", 
+#     :pass => BCrypt::Password.create('hello',:cost => 12)
+#   )
+#   temp.save!
+#   redirect '/'
+# end
+
+
+def authenticate(user, pass)
+  if User.where(:user => user).first == nil
+    puts "no user account"
+  else
+    if BCrypt::Password.new(User.where(:user => user).first.pass) == pass
+      true
+    else
+      false
+    end
+  end
+end
+
 
 signing_key_path = File.expand_path("../app.rsa", __FILE__)
 verify_key_path = File.expand_path("../app.rsa.pub", __FILE__)
@@ -27,10 +70,7 @@ end
 set :signing_key, signing_key
 set :verify_key, verify_key
 
-# enable sessions which will be our default for storing the token
 enable :sessions
-
-#this is to encrypt the session, but not really necessary just for token because we aren't putting any sensitive info in there
 set :session_secret, 'super secret' 
 
 helpers do
@@ -73,7 +113,8 @@ helpers do
     @token = extract_token
     begin
       payload, header = JWT.decode(@token, settings.verify_key, true)
-      
+
+
       @exp = header["exp"]
 
       # check to see if the exp is set (we don't accept forever tokens)
@@ -90,6 +131,12 @@ helpers do
         return false
       end
 
+      # make sure the user only logs in once
+      if Token.where(:random => payload["random"]).first == nil 
+        puts "only one login per user at a time, bad random token"
+        return false
+      end
+
       @user_id = payload["user_id"]
 
     rescue JWT::DecodeError => e
@@ -100,11 +147,11 @@ end
 
 get '/' do
   protected!
-  erb :index
+  haml :index
 end
 
 get '/login' do
-  erb :login
+  haml :login
 end
 
 get '/logout' do
@@ -113,24 +160,33 @@ get '/logout' do
 end
 
 post '/login' do
-  # check the username and password
-  # you would use some sort of User record here to verify the credentials
-  if params[:username] == "username" && params[:password] == "password"
-    # if the user/pass credentials are valid, lets issue a JSON Web Token:
-    # normally you might put the user_id in payload, or some other identifying 
-    # attributes that we can use to get the current authenticated user's identity
-    # on future visists to the site
-    
-    headers = {
-      exp: Time.now.to_i + 20 #expire in 20 seconds
-    }
 
-    @token = JWT.encode({user_id: 123456}, settings.signing_key, "RS256", headers)
+  if authenticate(params[:username].downcase.delete(" "), params[:password])
+
+    headers = {
+      exp: Time.now.to_i + 60 #expire in 60 seconds
+    }
+    account = User.where(:user => params[:username].downcase.delete(" ")).first
+    randy = ""
+    randy = SecureRandom.base64
     
+    if Token.where(:user => account[:user]).first == nil
+      nil
+    else
+      Token.where(:user => account[:user]).first.delete 
+    end
+
+      only_one_user = Token.new(:user => account[:user],:random => randy)
+      only_one_user.save! 
+
+    @token = JWT.encode({user_id: account[:firstname], random: randy}, settings.signing_key, "RS256", headers)
+    puts @token
+
     session["access_token"] = @token
     redirect to("/")
   else
     @message = "Username/Password failed."
-    erb :login
+    haml :login
   end
 end
+
