@@ -20,7 +20,8 @@ Built using:
 To get started with this project
 =================================
 
-First go to mongolab[https://mongolab.com] and create an account and database, make sure to create a user and copy the database URI should look something like. 
+First go to [mongolab](https://mongolab.com) and create an account and database, make sure to create a user and copy the database URI should look something like. 
+
 `mongodb://<user>:<password>@<url>:<port>/<database_name>`
 
 Clone this repo and run bundle
